@@ -10,14 +10,11 @@ Deterministic (DFA) and Non-deterministic (NFA) Finite Automata, including
 share the same file format and algorithms: a **modern web app** that runs entirely in
 the browser, and a **Python desktop app** built with PyQt6.
 
-[![Live demo](https://img.shields.io/badge/live%20demo-open-2d6fd6)](https://reyescarlata0.github.io/automata-studio/)
-[![Deploy](https://github.com/ReyEscarlata0/automata-studio/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/ReyEscarlata0/automata-studio/actions/workflows/deploy-pages.yml)
-[![Release](https://img.shields.io/github/v/release/ReyEscarlata0/automata-studio)](https://github.com/ReyEscarlata0/automata-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-> 🌐 **Try it now — no installation:** **[reyescarlata0.github.io/automata-studio](https://reyescarlata0.github.io/automata-studio/)**
+> 🌐 **Try it now — no installation:** open `web/index.html` in any modern browser.
 >
-> 💻 **Prefer a desktop app?** [Download AutomataStudio.exe](https://github.com/ReyEscarlata0/automata-studio/releases/latest) (Windows, no Python needed)
+> 💻 **Prefer a desktop app?** Run `python main.py` after installing the requirements (Windows, macOS, Linux).
 
 ---
 
@@ -154,5 +151,7 @@ Both test suites verify:
 ---
 
 ## License
+
+[MIT](LICENSE) — free to use, modify, and share for educational and professional purposes.
 
 [MIT](LICENSE) — free to use, modify, and share for educational and professional purposes.
