@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutomataForge — Finite Automata Editor &amp; Simulator</title>
+<meta name="description" content="Build, edit, simulate and analyse deterministic and non-deterministic finite automata in the browser: step-by-step simulation, NFA to DFA subset construction and DFA minimization.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="toolbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <circle cx="6" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <circle cx="18" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <circle cx="18" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <path d="M10 12 h4" stroke="currentColor" stroke-width="1.6" fill="none"/>
+      <path d="M13 10.4 L14.6 12 L13 13.6" fill="currentColor"/>
+    </svg>
+    <span>AutomataForge</span>
+  </div>
+
+  <div class="toolbar-group">
+    <button id="btn-new" class="ghost" title="New automaton">New</button>
+    <button id="btn-open" class="ghost" title="Open a .afjson or JFLAP .jff file">Open</button>
+    <button id="btn-save" class="ghost" title="Download as .afjson">Save</button>
+    <select id="select-export" title="Export diagram or code">
+      <option value="">Export…</option>
+      <option value="png">PNG image</option>
+      <option value="svg">SVG vector</option>
+      <option value="dot">Graphviz DOT (.dot)</option>
+      <option value="mermaid">Mermaid (.mmd)</option>
+      <option value="tikz">LaTeX TikZ (.tex)</option>
+      <option value="jflap">JFLAP XML (.jff)</option>
+      <option value="report">Printable report (PDF)</option>
+    </select>
+  </div>
+
+  <div class="toolbar-group">
+    <select id="select-example" title="Load an example automaton">
+      <option value="">Examples…</option>
+    </select>
+  </div>
+
+  <div class="toolbar-group">
+    <button id="btn-undo" class="ghost" title="Undo (Ctrl+Z)" disabled>↶</button>
+    <button id="btn-redo" class="ghost" title="Redo (Ctrl+Y)" disabled>↷</button>
+  </div>
+
+  <div class="toolbar-group">
+    <select id="select-layout" title="Choose auto-layout algorithm">
+      <option value="circular">Layout: Circular</option>
+      <option value="layered">Layout: Layered (DAG)</option>
+      <option value="spring">Layout: Spring (Force)</option>
+    </select>
+    <button id="btn-apply-layout" class="ghost" title="Run layout">Apply</button>
+    <button id="btn-fit" class="ghost" title="Fit the diagram to the view">Fit</button>
+    <button id="btn-zoom-in" class="ghost" title="Zoom in">+</button>
+    <button id="btn-zoom-out" class="ghost" title="Zoom out">−</button>
+  </div>
+
+  <div class="toolbar-group toolbar-end">
+    <button id="btn-theme" class="ghost" title="Toggle dark mode">🌙</button>
+    <button id="btn-help" class="ghost" title="Help">?</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ---------------- Left: editor ---------------- -->
+  <section class="panel panel-left" aria-label="Editor">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="states" role="tab">States</button>
+      <button class="tab" data-tab="alphabet" role="tab">Alphabet</button>
+      <button class="tab" data-tab="transitions" role="tab">Transitions</button>
+      <button class="tab" data-tab="regex" role="tab">Regex</button>
+      <button class="tab" data-tab="random" role="tab">Random</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="states">
+      <div class="field-row">
+        <input id="input-state" type="text" placeholder="State name (e.g. q0)" maxlength="20" autocomplete="off">
+        <button id="btn-add-state">Add</button>
+      </div>
+      <ul id="list-states" class="item-list" aria-label="States"></ul>
+      <div class="button-row">
+        <button id="btn-set-start" class="secondary" disabled>Set as start</button>
+        <button id="btn-toggle-accept" class="secondary" disabled>Toggle accepting</button>
+      </div>
+      <div class="button-row">
+        <button id="btn-rename-state" class="secondary" disabled>Rename</button>
+        <button id="btn-remove-state" class="danger" disabled>Delete</button>
+      </div>
+      <p class="hint">Tip: double-click canvas to add state. Double-click state to toggle accepting.</p>
+    </div>
+
+    <div class="tab-panel" data-panel="alphabet">
+      <div class="field-row">
+        <input id="input-symbol" type="text" placeholder="Symbol (one character)" maxlength="1" autocomplete="off">
+        <button id="btn-add-symbol">Add</button>
+      </div>
+      <ul id="list-alphabet" class="item-list" aria-label="Alphabet"></ul>
+      <button id="btn-remove-symbol" class="danger" disabled>Delete symbol</button>
+      <p class="hint">ε is reserved for epsilon transitions and is never part of the alphabet.</p>
+    </div>
+
+    <div class="tab-panel" data-panel="transitions">
+      <div class="field-grid">
+        <label>From<select id="select-source"></select></label>
+        <label>Symbol<select id="select-symbol"></select></label>
+        <label>To<select id="select-target"></select></label>
+      </div>
+      <button id="btn-add-transition">Add transition</button>
+      <ul id="list-transitions" class="item-list tall" aria-label="Transitions"></ul>
+      <button id="btn-remove-transition" class="danger" disabled>Delete transition</button>
+    </div>
+
+    <div class="tab-panel" data-panel="regex">
+      <div class="field-row">
+        <input id="input-regex" type="text" placeholder="e.g. [0-9]{4} or (a|b)*abb" autocomplete="off">
+        <button id="btn-build-regex-clean" title="Build clean, minimal, optimal transition diagram">Build Clean Diagram</button>
+        <button id="btn-build-regex-nfa" class="secondary" title="Build raw textbook Thompson NFA">Raw ε-NFA</button>
+      </div>
+      <div class="quick-tokens" aria-label="Quick regex symbols">
+        <button type="button" class="token-btn" data-token="(">(</button>
+        <button type="button" class="token-btn" data-token=")">)</button>
+        <button type="button" class="token-btn" data-token="|">|</button>
+        <button type="button" class="token-btn" data-token="*">*</button>
+        <button type="button" class="token-btn" data-token="+">+</button>
+        <button type="button" class="token-btn" data-token="?">?</button>
+        <button type="button" class="token-btn" data-token="ε">ε</button>
+      </div>
+      <p class="hint"><strong>Thompson's Construction:</strong> Converts regular expressions into an equivalent ε-NFA with automatic layered layout.</p>
+      <div class="regex-examples">
+        <p class="hint" style="margin-top:6px;"><strong>Presets &amp; Verification Patterns:</strong></p>
+        <div class="button-row" style="flex-wrap:wrap; gap:4px;">
+          <button type="button" class="token-preset" data-rx="[0-9]{4}">ATM PIN: [0-9]{4}</button>
+          <button type="button" class="token-preset" data-rx="[a-c]+@[a-c]+\.[a-c]+">Email: [a-c]+@[a-c]+\.[a-c]+</button>
+          <button type="button" class="token-preset" data-rx="(a|1)*(a(a|1)*1|1(a|1)*a)(a|1)*">Password: letter + digit</button>
+          <button type="button" class="token-preset" data-rx="(a|b)*abb">(a|b)*abb</button>
+          <button type="button" class="token-preset" data-rx="(0|1)*00">(0|1)*00</button>
+          <button type="button" class="token-preset" data-rx="a*b*|b*a*">a*b*|b*a*</button>
+          <button type="button" class="token-preset" data-rx="(01)+">(01)+</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------- Center: canvas ---------------- -->
+  <section class="canvas-area" aria-label="Diagram">
+    <div class="canvas-header">
+      <input id="input-name" type="text" class="name-input" placeholder="Automaton name" maxlength="80">
+      <span id="badge-type" class="badge">—</span>
+    </div>
+    <div class="canvas-wrap">
+      <svg id="canvas" role="img" aria-label="Automaton diagram"></svg>
+      <div id="canvas-empty" class="canvas-empty">
+        <p><strong>No states yet.</strong></p>
+        <p>Double click the canvas to create a state, or load an example from the toolbar.</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="dot normal"></i>State</span>
+      <span><i class="dot accept"></i>Accepting</span>
+      <span><i class="dot start-ring"></i>Start</span>
+      <span><i class="dot dead"></i>Dead</span>
+      <span><i class="dot unreachable"></i>Unreachable</span>
+      <span><i class="dot highlight"></i>Active</span>
+    </div>
+  </section>
+
+  <!-- ---------------- Right: analysis ---------------- -->
+  <section class="panel panel-right" aria-label="Analysis">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="properties" role="tab">Properties</button>
+      <button class="tab" data-tab="convert" role="tab">Transform</button>
+      <button class="tab" data-tab="batch" role="tab">Batch &amp; Words</button>
+      <button class="tab" data-tab="equiv" role="tab">Equiv</button>
+      <button class="tab" data-tab="random" role="tab">Random Gen</button>
+      <button class="tab" data-tab="dist" role="tab">Distribution</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="properties">
+      <div id="properties-body"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="convert">
+      <div class="button-row stacked">
+        <button id="btn-to-dfa">NFA → DFA (subset construction)</button>
+        <button id="btn-minimize">Minimize DFA (Moore)</button>
+        <button id="btn-to-regex">Automaton → Regular Expression (GNFA)</button>
+        <button id="btn-complement" class="secondary">Complement DFA (L')</button>
+        <button id="btn-to-nfa" class="secondary">DFA → NFA</button>
+      </div>
+      <div id="convert-body" class="result-box">
+        <p class="hint">Run a transformation or algorithm to inspect the step-by-step process before applying.</p>
+      </div>
+      <button id="btn-apply-conversion" class="apply" hidden>Use as current automaton</button>
+    </div>
+
+    <div class="tab-panel" data-panel="batch">
+      <h3 style="margin:0 0 6px 0; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Shortlex Word Generator</h3>
+      <div class="field-row">
+        <label style="font-size:11px;">Limit: <input id="input-word-limit" type="number" value="15" min="1" max="50" style="width:50px;"></label>
+        <button id="btn-generate-words">Generate</button>
+      </div>
+      <div id="words-output" class="result-box" style="max-height:120px; overflow-y:auto; margin-bottom:12px;">
+        <p class="hint">Generate the shortest words accepted by the language.</p>
+      </div>
+
+      <h3 style="margin:0 0 6px 0; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Batch String Tester</h3>
+      <textarea id="input-batch-strings" rows="4" style="width:100%; font-family:monospace; font-size:12px; padding:6px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); resize:vertical;" placeholder="Enter strings (one per line)&#10;e.g.&#10;1&#10;01&#10;10&#10;11"></textarea>
+      <button id="btn-run-batch" style="margin-top:6px;">Run Batch Test</button>
+      <div id="batch-output" class="result-box" style="margin-top:8px; max-height:150px; overflow-y:auto;">
+        <p class="hint">Results will appear here.</p>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="equiv">
+      <h3 style="margin:0 0 6px 0; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Equivalence Checker</h3>
+      <p class="hint">Compare current automaton with another to check if L(M1) == L(M2), or find a counterexample string.</p>
+      <label style="display:block; margin:8px 0 4px; font-size:12px;">Compare with example:
+        <select id="select-equiv-target" style="width:100%; margin-top:4px;"></select>
+      </label>
+      <button id="btn-check-equiv" style="margin-top:6px;">Check Equivalence</button>
+      <div id="equiv-output" class="result-box" style="margin-top:10px;">
+        <p class="hint">Equivalence verdict and counterexamples will be displayed here.</p>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="random">
+      <h3 style="margin:0 0 6px 0; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Random Automaton Generator</h3>
+      <p class="hint">Generate a random DFA or NFA for quick experiments, testing, or classroom demos. Replaces the current automaton.</p>
+      <label style="display:block; margin:8px 0 4px; font-size:12px;">Type:
+        <select id="select-random-type" style="width:100%; margin-top:4px;">
+          <option value="DFA">DFA (complete)</option>
+          <option value="NFA">NFA (may use ε)</option>
+        </select>
+      </label>
+      <div class="field-row" style="flex-wrap:wrap; gap:8px;">
+        <label style="font-size:11px;">States: <input id="input-random-states" type="number" value="5" min="1" max="30" style="width:56px;"></label>
+        <label style="font-size:11px;">Alphabet size: <input id="input-random-alphabet" type="number" value="2" min="1" max="10" style="width:56px;"></label>
+      </div>
+      <div class="field-row" style="flex-wrap:wrap; gap:8px; margin-top:6px;">
+        <label style="font-size:11px;">Density: <input id="input-random-density" type="number" value="1" min="0.05" max="1" step="0.05" style="width:56px;"></label>
+        <label style="font-size:11px;">Accept ratio: <input id="input-random-accept" type="number" value="0.4" min="0" max="1" step="0.05" style="width:56px;"></label>
+      </div>
+      <label style="display:block; margin:8px 0 4px; font-size:12px;">
+        <input id="input-random-epsilon" type="checkbox" checked> Allow ε-transitions (NFA only)
+      </label>
+      <label style="font-size:11px;">Non-determinism (NFA): <input id="input-random-nondet" type="number" value="0.3" min="0" max="1" step="0.05" style="width:56px;"></label>
+      <button id="btn-run-random" style="margin-top:10px;">Generate random automaton</button>
+    </div>
+
+    <div class="tab-panel" data-panel="dist">
+      <h3 style="margin:0 0 6px 0; font-size:12px; text-transform:uppercase; color:var(--text-dim);">Word-Length Distribution</h3>
+      <p class="hint">For each length, shows whether the language contains a string of that length. Works for DFAs, NFAs and ε-NFAs.</p>
+      <div class="field-row">
+        <label style="font-size:11px;">Max length: <input id="input-dist-maxlen" type="number" value="10" min="1" max="30" style="width:56px;"></label>
+        <button id="btn-run-distribution">Compute</button>
+      </div>
+      <div id="distribution-output" class="result-box" style="margin-top:8px; max-height:260px; overflow-y:auto;">
+        <p class="hint">Run the analysis to see the accepted-length profile.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ---------------- Bottom: simulation ---------------- -->
+<footer class="sim-bar" aria-label="Simulation">
+  <div class="sim-input">
+    <label for="input-string">Input string</label>
+    <input id="input-string" type="text" placeholder="e.g. 1011" autocomplete="off">
+    <button id="btn-simulate">Simulate</button>
+  </div>
+
+  <div class="sim-controls">
+    <button id="btn-step-first" class="secondary" disabled title="First step">⏮</button>
+    <button id="btn-step-prev" class="secondary" disabled title="Previous step">◀</button>
+    <button id="btn-step-auto" class="secondary" disabled title="Play automatically">▶ Auto</button>
+    <button id="btn-step-next" class="secondary" disabled title="Next step">▶</button>
+    <button id="btn-step-last" class="secondary" disabled title="Last step">⏭</button>
+  </div>
+
+  <div class="sim-readout">
+    <div id="sim-tape" class="tape" aria-label="Input tape"></div>
+    <div id="sim-step" class="sim-step">Enter a string and press Simulate.</div>
+  </div>
+
+  <div id="sim-verdict" class="verdict" aria-live="polite"></div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<dialog id="help-dialog" class="dialog">
+  <h2>AutomataForge — Advanced Finite Automata Studio</h2>
+  <ol>
+    <li><strong>Editor</strong> — Manage states, alphabet, and transitions. Double-click the canvas to quickly add a new state; double-click a state to toggle accepting.</li>
+    <li><strong>Regex ➔ NFA</strong> — Enter any regular expression (e.g. <code>(a|b)*abb</code>, <code>(0|1)*00</code>) to generate an ε-NFA using Thompson's construction with automated layered layout.</li>
+    <li><strong>Simulation</strong> — Step through strings symbol-by-symbol, forward, backward, or auto-play.</li>
+    <li><strong>Transformations</strong> — NFA ➔ DFA (subset construction table), DFA Minimization (Moore partition refinement), Automaton ➔ Regex (GNFA state elimination), and DFA Complementation.</li>
+    <li><strong>Batch &amp; Words</strong> — Generate the first N shortlex words accepted by the language; run batch test suites with visual pass/fail indicators.</li>
+    <li><strong>Equivalence</strong> — Determine if two automata recognize the exact same language (L1 == L2) or find shortest counterexample strings.</li>
+    <li><strong>Interoperability &amp; Export</strong> — Export to PNG, SVG, Graphviz DOT (.dot), Mermaid (.mmd), LaTeX TikZ (.tex), JFLAP XML (.jff), and printable PDF reports. Import both .afjson and JFLAP .jff files!</li>
+    <li><strong>Random Gen</strong> — Generate a random DFA or NFA with a configurable number of states, alphabet size, transition density and accept ratio; NFAs may include ε-transitions.</li>
+    <li><strong>Distribution</strong> — Inspect the word-length profile of the language: which string lengths are accepted, computed by dynamic programming over state sets.</li>
+  </ol>
+  <p class="hint">Keyboard shortcuts: Ctrl+Z undo · Ctrl+Y redo · Enter simulates · ← → step through simulation.</p>
+  <form method="dialog"><button class="apply">Close</button></form>
+</dialog>
+
+<dialog id="export-code-dialog" class="dialog">
+  <h2 id="export-dialog-title">Export Code</h2>
+  <textarea id="export-code-textarea" rows="12" readonly style="width:100%; font-family:monospace; font-size:12px; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--panel-alt); color:var(--text); resize:vertical;"></textarea>
+  <div class="button-row" style="margin-top:10px; justify-content:space-between;">
+    <button id="btn-copy-export-code" class="secondary">Copy to Clipboard</button>
+    <button id="btn-download-export-code">Download File</button>
+    <button id="btn-close-export-dialog" class="ghost">Close</button>
+  </div>
+</dialog>
+
+<input id="file-input" type="file" accept=".afjson,.json,application/json,.jff,.xml" hidden>
+
+<script src="js/automaton.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/examples.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

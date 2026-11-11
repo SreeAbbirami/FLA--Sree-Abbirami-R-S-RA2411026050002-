@@ -1,0 +1,103 @@
+{
+  "name": "Email Validation",
+  "states": [
+    "q0",
+    "q_user",
+    "q_at",
+    "q_domain",
+    "q_dot",
+    "q_ext"
+  ],
+  "alphabet": [
+    "a",
+    "b",
+    "@",
+    "."
+  ],
+  "start_state": "q0",
+  "accept_states": [
+    "q_ext"
+  ],
+  "transitions": {
+    "q0": {
+      "a": [
+        "q_user"
+      ],
+      "b": [
+        "q_user"
+      ]
+    },
+    "q_user": {
+      "a": [
+        "q_user"
+      ],
+      "b": [
+        "q_user"
+      ],
+      "@": [
+        "q_at"
+      ]
+    },
+    "q_at": {
+      "a": [
+        "q_domain"
+      ],
+      "b": [
+        "q_domain"
+      ]
+    },
+    "q_domain": {
+      "a": [
+        "q_domain"
+      ],
+      "b": [
+        "q_domain"
+      ],
+      ".": [
+        "q_dot"
+      ]
+    },
+    "q_dot": {
+      "a": [
+        "q_ext"
+      ],
+      "b": [
+        "q_ext"
+      ]
+    },
+    "q_ext": {
+      "a": [
+        "q_ext"
+      ],
+      "b": [
+        "q_ext"
+      ]
+    }
+  },
+  "positions": {
+    "q0": [
+      70,
+      200
+    ],
+    "q_user": [
+      210,
+      200
+    ],
+    "q_at": [
+      350,
+      200
+    ],
+    "q_domain": [
+      490,
+      200
+    ],
+    "q_dot": [
+      630,
+      200
+    ],
+    "q_ext": [
+      770,
+      200
+    ]
+  }
+}
