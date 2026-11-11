@@ -12,10 +12,6 @@ the browser, and a **Python desktop app** built with PyQt6.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-> 🌐 **Try it now — no installation:** open `web/index.html` in any modern browser.
->
-> 💻 **Prefer a desktop app?** Run `python main.py` after installing the requirements (Windows, macOS, Linux).
-
 ---
 
 ## Advanced Features
@@ -160,4 +156,3 @@ Both test suites verify:
 
 [MIT](LICENSE) — free to use, modify, and share for educational and professional purposes.
 
-[MIT](LICENSE) — free to use, modify, and share for educational and professional purposes.
