@@ -1,6 +1,6 @@
 # FLA--Sree-Abbirami-R-S-RA2411026050002-
 
-# AutomataStudio
+# AutomataForge
 
 **Build, simulate, convert and analyse finite automata — in your browser or on your desktop.**
 
@@ -49,6 +49,8 @@ the browser, and a **Python desktop app** built with PyQt6.
 **Language Analysis & Batch Testing**
 - **Language Properties**: Detects whether the language is empty ($L = \emptyset$), finite, or infinite ($L = \infty$).
 - **Shortlex Accepted Word Generator**: Generates the shortest accepted strings in lexicographical order.
+- **Word-Length Distribution**: Dynamic-programming analysis showing which string lengths the language accepts.
+- **Random Automaton Generator**: Instantly create a random DFA or NFA with configurable states, alphabet size, transition density and accept ratio (NFAs may include ε-transitions).
 - **Batch Test Suite**: Run multiple test strings at once with instant PASS/FAIL status indicators and active final states.
 
 **Simulation**
@@ -61,6 +63,7 @@ the browser, and a **Python desktop app** built with PyQt6.
 - **JSON (.afjson)**: Save and open projects — compatible across both web and desktop apps.
 - **JFLAP 7 (.jff) XML**: Full export and import compatibility with the widely used academic tool JFLAP.
 - **Graphviz DOT (.dot)**: Export clean Graphviz digraph source code.
+- **Mermaid (.mmd)**: Export a `stateDiagram-v2` that renders in GitHub, Notion, Obsidian and most wikis.
 - **LaTeX TikZ (.tex)**: Export publication-ready TikZ code for papers, homework, and slides.
 - **Vector SVG & High-res PNG**: Direct diagram download.
 - **Printable PDF report**: Includes diagram, structural properties, and full transition table.
@@ -77,12 +80,13 @@ automata-studio/
 ├── algorithms/                 # Clean, consolidated algorithms package
 │   ├── conversions.py          # Regex ↔ NFA/DFA, GNFA, complement, product, equivalence
 │   ├── minimization.py         # Moore partition refinement algorithm
-│   ├── properties.py           # Structural analysis, finiteness and emptiness
+│   ├── properties.py           # Structural analysis, finiteness, emptiness, word-length distribution
+│   ├── random_gen.py           # Random DFA / NFA generator
 │   ├── simulation.py           # Active-state set simulation, shortlex generator, batch testing
 │   └── subset_construction.py  # NFA to DFA subset construction
 ├── controllers/                # Mediator between model, algorithms, and views
 ├── views/                      # Main window, editor panels, canvas
-├── utils/                      # File I/O (JSON, JFLAP, DOT, TikZ), validators, history
+├── utils/                      # File I/O (JSON, JFLAP, DOT, TikZ, Mermaid), validators, history
 ├── resources/                  # Preloaded examples and app icon
 ├── tests/                      # Python unit test suite
 ├── examples/                   # Clean sample .afjson automata (ATM PIN, Email, Password, etc.)
@@ -130,7 +134,7 @@ python main.py
 Both the Python backend and JavaScript browser engine have synchronized unit test suites:
 
 ```bash
-node web/tests/run-tests.js      # JavaScript port (101 checks, 0 failures)
+node web/tests/run-tests.js      # JavaScript port (136 checks, 0 failures)
 python tests/test_algorithms.py  # Python algorithm test suite
 ```
 
@@ -145,8 +149,10 @@ Both test suites verify:
 8. Complementation, product intersection, product union
 9. Equivalence checking & counterexample generation
 10. Shortlex accepted string generation & batch testing
-11. Multi-format exporters (Graphviz DOT, LaTeX TikZ, JFLAP XML) & JFLAP round-trip import
+11. Multi-format exporters (Graphviz DOT, Mermaid, LaTeX TikZ, JFLAP XML) & JFLAP round-trip import
 12. Real-world verification patterns (ATM PIN [0-9]{4}, Email validation, Password verification)
+13. Random DFA / NFA generation (deterministic when seeded)
+14. Word-length distribution over DFAs, NFAs and ε-NFAs
 
 ---
 
